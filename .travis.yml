@@ -1,0 +1,24 @@
+sudo: required
+services:
+    - docker
+
+before_install:
+    - docker build -t kaplim/react-test -f ./client/Dockerfile.dev ./client
+
+script:
+    - docker run -e CI=true kaplim/react-test npm run test -- --coverage
+
+after_success:
+    - docker build -t kaplim/multi-client ./client
+    - docker build -t kaplim/multi-nginx ./nginx
+    - docker build -t kaplim/multi-server ./server
+    - docker build -t kaplim/multi-worker ./worker
+
+    # Login to Docker CLI
+    - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_ID" --password-stdin
+
+    # Push the images to Docker Hub
+    - docker push kaplim/multi-client
+    - docker push kaplim/multi-nginx
+    - docker push kaplim/multi-server
+    - docker push kaplim/multi-worker
